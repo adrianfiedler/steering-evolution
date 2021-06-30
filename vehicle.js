@@ -19,6 +19,10 @@ function Vehicle(x, y, dna) {
   this.maxspeed = 5;
   this.maxforce = 0.5;
 
+  this.dna = [];
+  this.dna[0] = random(0, 1);
+  this.dna[1] = random(-1, 0);
+
   // Method to update location
   this.update = function () {
     // Update velocity
@@ -36,8 +40,8 @@ function Vehicle(x, y, dna) {
   };
 
   this.behaviors = function (good, bad) {
-    var steerG = this.eat(good, 0.2, this.dna[2]);
-    var steerB = this.eat(bad, -1, this.dna[3]);
+    var steerG = this.eat(good); //, 0.2, this.dna[2]);
+    var steerB = this.eat(bad); //, -1, this.dna[3]);
 
     steerG.mult(this.dna[0]);
     steerB.mult(this.dna[1]);
@@ -54,37 +58,11 @@ function Vehicle(x, y, dna) {
     }
   };
 
-  this.eat = function (list, nutrition, perception) {
-    var record = Infinity;
-    var closest = null;
-    for (var i = list.length - 1; i >= 0; i--) {
-      var d = this.position.dist(list[i]);
-
-      if (d < this.maxspeed) {
-        list.splice(i, 1);
-        this.health += nutrition;
-      } else {
-        if (d < record && d < perception) {
-          record = d;
-          closest = list[i];
-        }
-      }
-    }
-
-    // This is the moment of eating!
-
-    if (closest != null) {
-      return this.seek(closest);
-    }
-
-    return createVector(0, 0);
-  };
-
   this.eat = function (list) {
     let record = Infinity;
     let closest = -1;
     for (let i = 0; i < list.length; i++) {
-      let d = this.position.dist(food[i]);
+      let d = this.position.dist(list[i]);
       if (d < record) {
         record = d;
         closest = i;
@@ -92,11 +70,13 @@ function Vehicle(x, y, dna) {
     }
 
     if (record < 5) {
-      food.splice(closest, 1);
+      list.splice(closest, 1);
+    } else if (closest > -1) {
+      return this.seek(list[closest]);
     }
 
-    this.seek(list[closest]);
-  }
+    return createVector(0, 0);
+  };
 
   // A method that calculates a steering force towards a target
   // STEER = DESIRED MINUS VELOCITY
@@ -110,8 +90,8 @@ function Vehicle(x, y, dna) {
     var steer = p5.Vector.sub(desired, this.velocity);
     steer.limit(this.maxforce); // Limit to maximum steering force
 
-    // return steer;
-    this.applyForce(steer);
+    return steer;
+    // this.applyForce(steer);
   };
 
   this.dead = function () {
